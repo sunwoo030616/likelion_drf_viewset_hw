@@ -9,6 +9,7 @@ class PostSerializer(serializers.ModelSerializer):
     updated_at = serializers.CharField(read_only=True)
 
     comments = serializers.SerializerMethodField(read_only=True)
+    like_num = serializers.IntegerField()  # 좋아요 수 추가
 
     def get_comments(self, instance):
         serializer = CommentSerializer(instance.comments, many=True)
@@ -27,13 +28,15 @@ class PostSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'comments',
-            'click_num'
+            'click_num',
+            'like_num',
         ]
     image = serializers.ImageField(use_url=True, required=False)
 
 class PostListSerializer(serializers.ModelSerializer):
     comments_cnt = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
+    like_num = serializers.IntegerField()
 
     def get_comments_cnt(self, instance):
         return instance.comments.count()
@@ -50,7 +53,8 @@ class PostListSerializer(serializers.ModelSerializer):
             'updated_at',
             'image',
             'comments_cnt',
-            'tags'
+            'tags',
+            'like_num',
         ]
         read_only_fields = ['id','created_at','updated_at','comments_cnt']
 

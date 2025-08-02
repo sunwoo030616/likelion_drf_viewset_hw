@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     def get_serializer_class(self):
-        if self.action == "list":
+        if self.action == 'list':
             return PostListSerializer
         return PostSerializer
     
@@ -51,7 +51,7 @@ class PostViewSet(viewsets.ModelViewSet):
     
     @action(methods=['GET'], detail=False)
     def recommend(self, request):
-        ran_post = self.get_queryset().order_by("?").first()
+        ran_post = self.get_queryset().order_by('?').first()
         ran_post_serializer = PostListSerializer(ran_post)
         return Response(ran_post_serializer.data)
     
@@ -61,6 +61,28 @@ class PostViewSet(viewsets.ModelViewSet):
         test_post.click_num+=1
         test_post.save(update_fields=['click_num'])
         return Response()
+    @action(methods=['POST'], detail=True, permission_classes=[IsAuthenticated])
+    def like(self, request, pk=None):
+        post = self.get_object()
+        user = request.user
+        
+        # 사용자가 이미 좋아요를 눌렀는지 확인
+        if post.likes.filter(id=user.id).exists():
+            return Response({'detail': 'You have already liked this post.'}, status=400)
+        
+        # 좋아요 처리 (단순히 좋아요 수 증가)
+        post.like_num += 1
+        post.likes.add(user)  # 사용자가 좋아요를 누른 것으로 추가
+        post.save()
+        
+        return Response({'detail': 'You liked this post.'})
+
+    # 좋아요 상위 3개의 게시물 반환
+    @action(methods=['GET'], detail=False)
+    def top_liked(self, request):
+        top_posts = Post.objects.all().order_by('-like_num')[:3]
+        serializer = PostListSerializer(top_posts, many=True)
+        return Response(serializer.data)
 
 #댓글 디테일 조회 수정 삭제   
 class CommentViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
@@ -76,7 +98,7 @@ class PostCommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated]
     def get_queryset(self):
-        post = self.kwargs.get("post_id")
+        post = self.kwargs.get('post_id')
         queryset = Comment.objects.filter(post_id=post)
         return queryset
 
@@ -91,11 +113,11 @@ class PostCommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.
 class TagViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    lookup_field = "name"
-    lookup_url_kwarg="tag_name"
+    lookup_field = 'name'
+    lookup_url_kwarg='tag_name'
 
     def retrieve(self, request, *args, **kwargs):
-        tag_name=kwargs.get("tag_name")
+        tag_name=kwargs.get('tag_name')
         tags=get_object_or_404(Tag, name=tag_name)
         posts=Post.objects.filter(tags=tags)
         serializer = PostSerializer(posts, many=True)

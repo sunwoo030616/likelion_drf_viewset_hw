@@ -17,6 +17,8 @@ class Post(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     image = models.ImageField(upload_to=image_upload_path, blank=True, null=True)
     click_num = models.PositiveSmallIntegerField(default=0)
+    like_num = models.PositiveIntegerField(default=0)
+    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
 
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)
